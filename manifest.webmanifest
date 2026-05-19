@@ -1,0 +1,19 @@
+{
+  "name": "Концентрации растворов",
+  "short_name": "Растворы",
+  "description": "PWA-каталог растворов с фильтрацией и просмотром заявок",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#232B46",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
