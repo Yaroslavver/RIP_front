@@ -1,4 +1,4 @@
-const CACHE_NAME = 'electrolyte-pwa-v3';
+const CACHE_NAME = 'electrolyte-pwa-v4';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -8,10 +8,32 @@ const STATIC_ASSETS = [
   './pwa-icon.svg'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+const cacheStaticAssets = async () => {
+  const cache = await caches.open(CACHE_NAME);
+  await cache.addAll(STATIC_ASSETS);
+
+  const indexResponse = await fetch('./index.html', { cache: 'reload' });
+  if (!indexResponse.ok) return;
+
+  await cache.put('./index.html', indexResponse.clone());
+  const html = await indexResponse.text();
+  const assetUrls = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
+    .map((match) => new URL(match[1], self.location.href))
+    .filter((url) => url.origin === self.location.origin && url.pathname.includes('/assets/'));
+
+  await Promise.all(
+    assetUrls.map((url) =>
+      fetch(url).then((response) => {
+        if (response.ok) {
+          return cache.put(url, response);
+        }
+      }).catch(() => undefined)
+    )
   );
+};
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(cacheStaticAssets());
   self.skipWaiting();
 });
 
@@ -62,7 +84,12 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match('./index.html'));
+        .catch(() => {
+          if (event.request.destination === 'image') {
+            return caches.match('./DefaultImage.jpg');
+          }
+          return undefined;
+        });
     })
   );
 });
